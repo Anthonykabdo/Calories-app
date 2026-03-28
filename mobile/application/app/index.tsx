@@ -1,66 +1,122 @@
-import { View, Text, StyleSheet, Button, TouchableOpacity, ScrollView } from "react-native";
-import useCalorieStore  from "./store/useCalorieStore";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+} from "react-native";
+import useCalorieStore from "./store/useCalorieStore";
 import { useRouter } from "expo-router";
-import ImageCapture from "./components/ImageCapture"
+import ImageCapture from "./components/ImageCapture";
 import useUserStore from "./store/useUserStore";
 
 export default function DailyCaloricIntake() {
-  const router = useRouter(); // <-- Expo Router
-const totalCalories = useCalorieStore((state) => state.totalCalories);
-const resetCalories = useCalorieStore((state) => state.resetCalories);
+  const router = useRouter();
 
-const currentUser = useUserStore((state) => state.currentUser);
+  const totalCalories = useCalorieStore((state) => state.totalCalories);
+  const resetCalories = useCalorieStore((state) => state.resetCalories);
+  const currentUser = useUserStore((state) => state.currentUser);
 
-const dailyGoal = currentUser?.max_calories ?? 2000;
-const progress = Math.min(totalCalories / dailyGoal, 1);
-const isOverLimit = totalCalories > dailyGoal;
+  const dailyGoal = currentUser?.max_calories ?? 2000;
+  const progress = Math.min(totalCalories / dailyGoal, 1);
+  const isOverLimit = totalCalories > dailyGoal;
 
+  const [ingredients, setIngredients] = useState("");
+  const [recipes, setRecipes] = useState<any[]>([]);
+
+  const suggestRecipes = async () => {
+    try {
+      const response = await fetch("http://192.168.1.2:5001/suggest-recipes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ingredients,
+          calorieGoal: dailyGoal,
+          mealType: "any",
+          dietaryPreference: "none",
+        }),
+      });
+
+      const data = await response.json();
+      setRecipes(data.recipes || []);
+    } catch (error) {
+      console.error("AI error:", error);
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
-
-      {/* Progress Bar */}
       <View style={styles.progressBarBackground}>
-        <View style={[styles.progressBarFill, { width: `${progress * 100}%`, backgroundColor: isOverLimit ? "#ff4d4d" : "#76c7c0" }]} />
+        <View
+          style={[
+            styles.progressBarFill,
+            {
+              width: `${progress * 100}%`,
+              backgroundColor: isOverLimit ? "#ff4d4d" : "#76c7c0",
+            },
+          ]}
+        />
       </View>
 
       <Text style={styles.caloriesText}>
         {totalCalories} / {dailyGoal} kcal
       </Text>
 
-
-
       <Button title="Reset" onPress={resetCalories} />
 
-         <View style={styles.card}>
-      
-            <Text >Want to Calculate your calories manually?</Text>
+      <View style={styles.card}>
+        <Text>Want to Calculate your calories manually?</Text>
 
-            <View style={styles.innerContainer}>
-                <Text style={styles.calories}>
-                Go to the Add calories page
-                </Text>
+        <View style={styles.innerContainer}>
+          <Text style={styles.calories}>Go to the Add calories page</Text>
 
-                <TouchableOpacity style={styles.addButton} onPress={() => router.push("./details")}>
-                    <Text style={styles.addButtonText}>Add Calories Page</Text>
-                </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push("./details")}
+          >
+            <Text style={styles.addButtonText}>Add Calories Page</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text>Want to take a picture of your meal and we handle the rest?</Text>
+
+        <View style={styles.innerContainer}>
+          <Text style={styles.calories}>Take a Picture now</Text>
+          <ImageCapture />
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text>Want recipe suggestions based on your calories?</Text>
+
+        <View style={styles.innerContainer}>
+          <TextInput
+            placeholder="Enter ingredients (e.g. eggs, rice)"
+            value={ingredients}
+            onChangeText={setIngredients}
+            style={styles.input}
+          />
+
+          <TouchableOpacity style={styles.addButton} onPress={suggestRecipes}>
+            <Text style={styles.addButtonText}>Get AI Recipes</Text>
+          </TouchableOpacity>
+
+          {recipes.map((recipe, index) => (
+            <View key={index} style={styles.recipeCard}>
+              <Text style={styles.recipeTitle}>{recipe.name}</Text>
+              <Text>{recipe.estimated_calories} kcal</Text>
+              <Text>{recipe.why_it_fits}</Text>
             </View>
-
-         </View>
-
-         <View style={styles.card}>
-      
-            <Text >Want to take a picture of your meal and we handle thge rest?</Text>
-
-            <View style={styles.innerContainer}>
-                <Text style={styles.calories}>
-                Take a Picture now
-                </Text>
-      <ImageCapture  />
-
-            </View>
-    </View>
-
+          ))}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -71,8 +127,8 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
-    innerContainer: {
-    alignItems: 'center',
+  innerContainer: {
+    alignItems: "center",
     marginTop: 10,
   },
   progressBarBackground: {
@@ -103,13 +159,12 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 10,
   },
- card: {
+  card: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
-        marginTop: 20,
-
+    marginTop: 20,
     elevation: 4,
   },
   cardText: {
@@ -117,7 +172,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-    addButton: {
+  addButton: {
     backgroundColor: "#1e90ff",
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -126,5 +181,21 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    width: "100%",
+    marginBottom: 10,
+    borderRadius: 8,
+  },
+  recipeCard: {
+    marginTop: 15,
+    width: "100%",
+  },
+  recipeTitle: {
+    fontWeight: "bold",
+    marginBottom: 4,
   },
 });
