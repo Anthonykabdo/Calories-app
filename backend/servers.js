@@ -145,30 +145,40 @@ app.post("/calories", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
-
 app.get("/calories/:userName", async (req, res) => {
   const { userName } = req.params;
+  let { date } = req.query;
+
+  if (!date) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    date = `${yyyy}-${mm}-${dd}`;
+  }
 
   try {
     const result = await sql.query`
       SELECT c.*, 
-             f.name AS foodName, f.caloriesPerServing AS foodCalories,
-             r.name AS recipeName, r.total_calories AS recipeCalories
+             f.name AS foodName, f.caloriesPerServing AS foodCalories, f.image AS foodImage,
+             r.name AS recipeName, r.total_calories AS recipeCalories, r.image AS recipeImage
       FROM CalorieLogs c
       LEFT JOIN Foods f ON c.itemType = 'food' AND c.itemId = f.id
       LEFT JOIN Recipes r ON c.itemType = 'recipe' AND c.itemId = r.id
       WHERE c.userName = ${userName}
+        AND CAST(c.createdAt AS DATE) = ${date}
       ORDER BY c.createdAt DESC
     `;
 
     const data = result.recordset.map(row => ({
       id: row.id,
       name: row.itemType === 'food' ? row.foodName : row.recipeName,
-      totalCalories: row.itemType === 'food' 
-        ? row.foodCalories * row.servings   // multiply by servings for food
-        : row.recipeCalories,               // already total for recipe
+      totalCalories: row.itemType === 'food'
+        ? row.foodCalories * row.servings
+        : row.recipeCalories,
       servings: row.servings,
-      itemType: row.itemType
+      itemType: row.itemType,
+      image: row.itemType === 'food' ? row.foodImage : row.recipeImage
     }));
 
     res.json(data);
@@ -238,6 +248,100 @@ app.get("/recipes", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+app.get("/calories/by-date", async (req, res) => {
+  const { userName, date } = req.query;
+
+  try {
+    const result = await pool.request()
+      .input("userName", sql.VarChar, userName)
+      .input("selectedDate", sql.Date, date)
+      .query(`
+        SELECT 
+          cl.id,
+          cl.servings,
+          cl.totalCalories,
+          cl.itemType,
+
+          CASE 
+            WHEN cl.itemType = 'food' THEN f.name
+            WHEN cl.itemType = 'recipe' THEN r.name
+          END AS name
+
+        FROM CalorieLogs cl
+        LEFT JOIN Foods f ON cl.itemId = f.id
+        LEFT JOIN Recipes r ON cl.itemId = r.id
+
+        WHERE cl.userName = @userName
+        AND CAST(cl.createdAt AS DATE) = @selectedDate
+
+        ORDER BY cl.createdAt DESC
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Update user endpoint for SQL Server
+// Update user endpoint for SQL Server with recalculated max_calories
+app.put("/updateUser/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { name, password, age, gender, height, weight, activity_level } = req.body;
+
+  if (!name || !password || !age || !gender || !height || !weight || !activity_level) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    // 🔹 Calculate BMR using Mifflin-St Jeor
+    let bmr;
+    if (gender.toLowerCase() === "male") {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+    const maxCalories = Math.round(bmr * activity_level);
+
+    // 🔹 SQL Server query
+    const request = new sql.Request();
+    request.input("name", sql.NVarChar, name);
+    request.input("password", sql.NVarChar, password);
+    request.input("age", sql.Int, age);
+    request.input("gender", sql.NVarChar, gender);
+    request.input("height", sql.Float, height);
+    request.input("weight", sql.Float, weight);
+    request.input("activity_level", sql.Float, activity_level);
+    request.input("max_calories", sql.Int, maxCalories);
+    request.input("id", sql.Int, userId);
+
+    const result = await request.query(`
+      UPDATE users
+      SET name = @name,
+          password = @password,
+          age = @age,
+          gender = @gender,
+          height = @height,
+          weight = @weight,
+          activity_level = @activity_level,
+          max_calories = @max_calories
+      OUTPUT INSERTED.*
+      WHERE id = @id
+    `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(result.recordset[0]); // return updated user
+  } catch (err) {
+    console.error("Update User Error:", err);
+    res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
 
 // 🚀 Start server
 

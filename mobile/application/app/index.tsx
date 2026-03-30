@@ -29,7 +29,7 @@ export default function DailyCaloricIntake() {
 
   const suggestRecipes = async () => {
     try {
-      const response = await fetch("http://192.168.1.2:5001/suggest-recipes", {
+      const response = await fetch("http://192.168.0.110:5001/suggest-recipes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
