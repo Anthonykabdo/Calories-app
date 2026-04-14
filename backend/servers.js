@@ -1,4 +1,5 @@
 const express = require("express");
+const { exec } = require("child_process");
 const cors = require("cors");
 const sql = require("mssql");
 
@@ -243,10 +244,58 @@ app.post("/update-streak", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+app.post("/ai/recommend", (req, res) => {
+  console.log("AI ROUTE HIT");
 
-/* =========================
-   🚀 START SERVER
-========================= */
+  const { ingredients, targetCalories } = req.body;
+
+  if (!ingredients || !Array.isArray(ingredients)) {
+    return res.status(400).json({
+      error: "ingredients must be an array"
+    });
+  }
+
+  if (!targetCalories || isNaN(Number(targetCalories))) {
+    return res.status(400).json({
+      error: "targetCalories must be a valid number"
+    });
+  }
+
+  const ingredientsArg = ingredients.join(", ");
+  const caloriesArg = Number(targetCalories);
+
+  exec(
+    `python ml_api.py "${ingredientsArg}" ${caloriesArg}`,
+    { cwd: __dirname },
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error("Python error:", error);
+        console.error("stderr:", stderr);
+
+        return res.status(500).json({
+          error: "AI failed",
+          details: stderr || error.message
+        });
+      }
+
+      try {
+        const result = JSON.parse(stdout);
+        return res.json(result);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        console.error("Raw stdout:", stdout);
+
+        return res.status(500).json({
+          error: "Invalid JSON from Python",
+          rawOutput: stdout
+        });
+      }
+    }
+  );
+});
+
+// 🚀 Start server
+
 app.listen(3000, "0.0.0.0", () => {
   console.log("Server running on port 3000");
 });

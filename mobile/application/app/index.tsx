@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Alert,
 } from "react-native";
 import useCalorieStore from "./store/useCalorieStore";
 import { useRouter } from "expo-router";
@@ -26,28 +27,39 @@ export default function DailyCaloricIntake() {
   const progress = Math.min(totalCalories / dailyGoal, 1);
   const isOverLimit = totalCalories > dailyGoal;
 
+  const [targetCalories, setTargetCalories] = useState("");
   const [ingredients, setIngredients] = useState("");
   const [recipes, setRecipes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const suggestRecipes = async () => {
     try {
-      const response = await fetch(`${API_URL}/suggest-recipes`, {
+      setLoading(true);
+
+      const response = await fetch("http://192.168.1.8:3000/ai/recommend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ingredients,
-          calorieGoal: dailyGoal,
-          mealType: "any",
-          dietaryPreference: "none",
+          targetCalories: Number(targetCalories),
+          ingredients: ingredients
+            .split(",")
+            .map((i) => i.trim())
+            .filter((i) => i.length > 0),
         }),
       });
 
       const data = await response.json();
+      console.log("AI recommendations:", data);
+
       setRecipes(data.recipes || []);
+      Alert.alert("Success", `Got ${data.recipes?.length || 0} recipes`);
     } catch (error) {
       console.error("AI error:", error);
+      Alert.alert("Error", "Failed to get AI recipes");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,25 +108,44 @@ export default function DailyCaloricIntake() {
       </View>
 
       <View style={styles.card}>
-        <Text>Want recipe suggestions based on your calories?</Text>
+        <Text>Tell us your target calories and available ingredients</Text>
 
         <View style={styles.innerContainer}>
           <TextInput
-            placeholder="Enter ingredients (e.g. eggs, rice)"
+            placeholder="Target meal calories (e.g. 500)"
+            value={targetCalories}
+            onChangeText={setTargetCalories}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+
+          <TextInput
+            placeholder="Ingredients (e.g. eggs, cheese, bread)"
             value={ingredients}
             onChangeText={setIngredients}
             style={styles.input}
           />
 
           <TouchableOpacity style={styles.addButton} onPress={suggestRecipes}>
-            <Text style={styles.addButtonText}>Get AI Recipes</Text>
+            <Text style={styles.addButtonText}>
+              {loading ? "Loading..." : "Get AI Recipes"}
+            </Text>
           </TouchableOpacity>
+
+          {recipes.length > 0 && (
+            <Text style={styles.resultHeader}>Suggested Recipes</Text>
+          )}
 
           {recipes.map((recipe, index) => (
             <View key={index} style={styles.recipeCard}>
               <Text style={styles.recipeTitle}>{recipe.name}</Text>
-              <Text>{recipe.estimated_calories} kcal</Text>
-              <Text>{recipe.why_it_fits}</Text>
+              <Text>{recipe.calories} kcal</Text>
+              <Text>Protein: {recipe.protein_g ?? "N/A"} g</Text>
+              <Text>Carbs: {recipe.carbs_g ?? "N/A"} g</Text>
+              <Text>Fat: {recipe.fat_g ?? "N/A"} g</Text>
+              <Text>Ingredients: {recipe.ingredients}</Text>
+              <Text>Meal type: {recipe.meal_type}</Text>
+              <Text>Score: {Number(recipe.score).toFixed(2)}</Text>
             </View>
           ))}
         </View>
@@ -151,11 +182,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: "bold",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
   calories: {
     fontSize: 16,
     color: "#666",
@@ -168,11 +194,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 20,
     elevation: 4,
-  },
-  cardText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
   },
   addButton: {
     backgroundColor: "#1e90ff",
@@ -192,12 +213,25 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 8,
   },
+  resultHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
   recipeCard: {
     marginTop: 15,
     width: "100%",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    backgroundColor: "#f9f9f9",
   },
   recipeTitle: {
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 6,
+    fontSize: 16,
   },
 });
