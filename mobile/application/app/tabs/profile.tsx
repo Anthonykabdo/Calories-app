@@ -20,7 +20,7 @@ export default function Profile() {
   // Edit profile state
   const [isEditing, setIsEditing] = useState(false);
 
-  const API_URL = "http://192.168.0.110:3000";
+  const API_URL = "http://192.168.0.116:3000";
 
   const activityOptions = [
     { label: "Sedentary", value: 1.2 },
@@ -67,6 +67,7 @@ const saveProfile = async () => {
       activity_level: Number(activityLevel),
     };
 
+    // 1️⃣ Update user info
     const res = await fetch(`${API_URL}/updateUser/${currentUser.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -77,11 +78,26 @@ const saveProfile = async () => {
 
     if (data.error) {
       setErrorMessage(data.error);
-    } else {
-      setUser(data); // Update Zustand store
-      setIsEditing(false);
-      setErrorMessage("");
+      return;
     }
+
+    // 2️⃣ Update Zustand store
+    setUser(data);
+
+    // 3️⃣ Add weight log **only if weight changed**
+    if (Number(weight) !== currentUser.weight) {
+      await fetch(`${API_URL}/add-weight`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          weight: Number(weight),
+        }),
+      });
+    }
+
+    setIsEditing(false);
+    setErrorMessage("");
   } catch (err) {
     console.error("Save Profile Error:", err);
     setErrorMessage("Failed to update profile");
@@ -152,7 +168,13 @@ const saveProfile = async () => {
                 });
                 const data = await res.json();
                 if (data.error) setErrorMessage(data.error);
-                else setUser(data);
+                else {
+  setUser({
+    ...data,
+    streak: data.streak || 0,
+    last_active_date: data.last_active_date || "",
+  });
+}
               } else {
                 const res = await fetch(`${API_URL}/login`, {
                   method: "POST",
@@ -160,8 +182,13 @@ const saveProfile = async () => {
                   body: JSON.stringify({ name, password }),
                 });
                 const data = await res.json();
-                if (data.success) setUser(data.user);
-                else setErrorMessage("Invalid credentials");
+if (data.success) {
+  setUser({
+    ...data.user,
+    streak: data.user.streak || 0,
+    last_active_date: data.user.last_active_date || "",
+  });
+}                else setErrorMessage("Invalid credentials");
               }
             } catch {
               setErrorMessage("Server error");

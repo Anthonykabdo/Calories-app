@@ -13,6 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "expo-router";
 import useUserStore from "../store/useUserStore";
 import AuthRequired from "../components/AuthRequired";
+import { Ionicons } from "@expo/vector-icons";
 
 interface CalorieItem {
   id: number;
@@ -22,6 +23,8 @@ interface CalorieItem {
   itemType: string;
   image?: string;
 }
+
+  const API_URL = "http://192.168.0.116:3000";
 
 export default function HistoryScreen() {
   const currentUser = useUserStore((state) => state.currentUser);
@@ -55,7 +58,7 @@ export default function HistoryScreen() {
     if (!userName) return;
     try {
       const res = await fetch(
-        `http://192.168.0.110:3000/calories/${userName}?date=${selectedDate.format("YYYY-MM-DD")}`
+        `${API_URL}/calories/${userName}?date=${selectedDate.format("YYYY-MM-DD")}`
       );
       const json = await res.json();
       setData(json);
@@ -118,7 +121,7 @@ export default function HistoryScreen() {
             }}
           />
           <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.calendarBtnWrapper}>
-            <Text style={styles.calendarBtn}>📅</Text>
+             <Ionicons name="calendar" size={30} />
           </TouchableOpacity>
         </View>
 

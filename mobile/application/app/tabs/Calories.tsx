@@ -24,6 +24,8 @@ interface FoodCardProps {
   item: FoodItem;
   setShowAuth: (value: boolean) => void;
 }
+  const API_URL = "http://192.168.0.116:3000";
+
 
 const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
   const [servings, setServings] = useState(1);
@@ -31,7 +33,6 @@ const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
   const addCalories = useCalorieStore((state) => state.addCalories);
 
   const totalCalories = servings * item.caloriesPerServing;
-  const API_URL = "http://192.168.0.110:3000";
 
   const handleAdd = async () => {
     if (!currentUser) {
@@ -117,7 +118,7 @@ export default function FoodDetailsScreen() {
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    fetch("http://192.168.0.110:3000/foods")
+    fetch(`${API_URL}/foods`)
       .then((res) => res.json())
       .then((data) => {
         setFoods(data);
@@ -149,7 +150,7 @@ export default function FoodDetailsScreen() {
       {/* Search Bar */}
       <View style={styles.container}>
       <SearchBar<FoodItem >
-        apiEndpoint="http://192.168.0.110:3000/search?table=Foods"
+        apiEndpoint="http://192.168.0.116:3000/search?table=Foods"
         onFilter={setFilteredData} // <-- fix typo: was setFilteredFoods
       />
       </View>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-
+import { useFocusEffect } from "@react-navigation/native";
 import useCalorieStore from "../store/useCalorieStore";
 import useUserStore from "../store/useUserStore";
 import SearchBar from "../components/Search";
@@ -20,21 +20,21 @@ interface Recipe {
   id: number;
   name: string;
   total_calories: number;
-  ingredients: string[] | string; // can be string from backend
+  ingredients: string[] | string;
   preparation: string;
   image: string;
 }
+
+const API_URL = "http://192.168.0.116:3000";
 
 // Utility: normalize ingredients into string[]
 const parseIngredients = (ing: string[] | string | null | undefined): string[] => {
   if (Array.isArray(ing)) return ing;
   if (typeof ing === "string") {
     try {
-      // try JSON.parse in case it's stringified array
       const parsed = JSON.parse(ing);
       if (Array.isArray(parsed)) return parsed.map(i => i.toString().trim());
     } catch {
-      // fallback: comma-separated string
       return ing.split(",").map(i => i.trim());
     }
   }
@@ -63,20 +63,24 @@ export default function RecipesScreen() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredData, setFilteredData] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch recipes from backend
+  // ⭐ saved meals (recipe IDs)
+  const [savedMeals, setSavedMeals] = useState<number[]>([]);
+
+  // Fetch recipes
   useEffect(() => {
-    fetch("http://192.168.0.110:3000/recipes")
+    fetch(`${API_URL}/recipes`)
       .then((res) => res.json())
       .then((data: any[]) => {
-        // normalize ingredients for all recipes
         const parsed = data.map((r) => ({
           ...r,
           ingredients: parseIngredients(r.ingredients),
         }));
+
         setRecipes(parsed);
         setFilteredData(parsed);
         setLoading(false);
@@ -87,7 +91,27 @@ export default function RecipesScreen() {
       });
   }, []);
 
-  // Select recipe
+  // Fetch saved meals for this user
+useFocusEffect(
+  useCallback(() => {
+    if (!currentUser) return;
+
+    const fetchSavedMeals = async () => {
+      try {
+        const res = await fetch(`${API_URL}/meals/user/${currentUser.id}`);
+        const data = await res.json();
+
+        const ids = data.map((m: any) => Number(m.recipe_id));
+        setSavedMeals(ids);
+      } catch (err) {
+        console.error("Failed to fetch saved meals", err);
+      }
+    };
+
+    fetchSavedMeals();
+  }, [currentUser])
+);
+
   const handleCardPress = (recipe: Recipe) => {
     setSelectedRecipe({
       ...recipe,
@@ -96,32 +120,60 @@ export default function RecipesScreen() {
     setModalVisible(true);
   };
 
-const handleAddCalories = async () => {
-  if (!currentUser) {
-    setAuthModalVisible(true);
-    return;
-  }
-  if (!selectedRecipe) return;
+  const handleAddCalories = async () => {
+    if (!currentUser) {
+      setAuthModalVisible(true);
+      return;
+    }
+    if (!selectedRecipe) return;
+    try {
+      const response = await fetch(`${API_URL}/calories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userName: currentUser.name,
+          itemId: selectedRecipe.id,
+          itemType: "recipe",
+          servings: 1,
+          totalCalories: selectedRecipe.total_calories,
+        }),
+      });
 
-  try {
-    const response = await fetch("http://192.168.0.110:3000/calories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userName: currentUser.name,
-        itemId: selectedRecipe.id,
-        itemType: "recipe",      // or "food" for foods
-        servings: 1,
-        totalCalories: selectedRecipe.total_calories
-      }),
-    });
+      if (!response.ok) throw new Error("Failed to save calories");
+      setModalVisible(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    if (!response.ok) throw new Error("Failed to save calories");
-    setModalVisible(false);
-  } catch (err) {
-    console.error(err);
-  }
-};
+  const handleSaveMeal = async () => {
+    if (!currentUser) {
+      setAuthModalVisible(true);
+      return;
+    }
+    if (!selectedRecipe) return;
+if (savedMeals.includes(selectedRecipe.id)) return;
+    try {
+      const response = await fetch(`${API_URL}/meals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+          recipe_id: selectedRecipe.id,
+          date: new Date(),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save meal");
+
+      // ⭐ instantly update UI
+      setSavedMeals((prev) => [...prev, selectedRecipe.id]);
+
+      setModalVisible(false);
+    } catch (err) {
+      console.error("Error saving meal:", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -131,62 +183,83 @@ const handleAddCalories = async () => {
     );
   }
 
+  const alreadySaved = selectedRecipe
+    ? savedMeals.includes(selectedRecipe.id)
+    : false;
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Search Bar */}
+      {/* Search */}
       <View style={styles.container}>
         <SearchBar<Recipe>
-          apiEndpoint="http://192.168.0.110:3000/search?table=Recipes"
+          apiEndpoint={`${API_URL}/search?table=Recipes`}
           onFilter={setFilteredData}
         />
       </View>
 
-      {/* Recipes List */}
+      {/* List */}
       <FlatList
         data={filteredData}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <RecipeCard item={item} onPress={() => handleCardPress(item)} />}
+        renderItem={({ item }) => (
+          <RecipeCard item={item} onPress={() => handleCardPress(item)} />
+        )}
         contentContainerStyle={styles.container}
       />
 
-      {/* Recipe Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      {/* Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <ScrollView>
               <Image source={{ uri: selectedRecipe?.image }} style={styles.modalImage} />
               <Text style={styles.modalName}>{selectedRecipe?.name}</Text>
               <Text style={styles.modalCalories}>
-                Total Calories: {selectedRecipe?.total_calories} kcal
+                {selectedRecipe?.total_calories} kcal
               </Text>
 
               <Text style={styles.sectionTitle}>Ingredients:</Text>
               {selectedRecipe &&
-                parseIngredients(selectedRecipe.ingredients).map((ing, idx) => (
-                  <Text key={idx} style={styles.modalText}>
-                    - {ing}
-                  </Text>
+                parseIngredients(selectedRecipe.ingredients).map((ing, i) => (
+                  <Text key={i}>- {ing}</Text>
                 ))}
 
               <Text style={styles.sectionTitle}>Preparation:</Text>
-              <Text style={styles.modalText}>{selectedRecipe?.preparation}</Text>
+              <Text>{selectedRecipe?.preparation}</Text>
             </ScrollView>
 
-            <TouchableOpacity style={styles.addButton} onPress={handleAddCalories}>
-              <Text style={styles.addButtonText}>Add Calories</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", marginTop: 16 }}>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  { flex: 1, marginRight: 8, backgroundColor: "#2196F3", opacity: alreadySaved ? 0.5 : 1 },
+                ]}
+                onPress={handleSaveMeal}
+                disabled={alreadySaved}
+              >
+                <Text style={styles.addButtonText}>
+                  {alreadySaved ? "Already Saved" : "Save Meal"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.addButton, { flex: 1, marginLeft: 8 }]}
+                onPress={handleAddCalories}
+              >
+                <Text style={styles.addButtonText}>Add Calories</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.addButton, { backgroundColor: "#ccc", marginTop: 10 }]}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={[styles.addButtonText, { color: "#333" }]}>Close</Text>
+              <Text>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* AuthRequired Modal */}
       <AuthRequired visible={authModalVisible} onClose={() => setAuthModalVisible(false)} />
     </View>
   );
@@ -199,7 +272,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
-    elevation: 4,
   },
   cardImage: { width: "100%", height: 180, borderRadius: 12, marginBottom: 12 },
   name: { fontSize: 18, fontWeight: "bold" },

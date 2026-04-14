@@ -62,6 +62,51 @@ export default function TabsLayout() {
             <Ionicons name="person" size={20} />
             <Text style={styles.text}>Profile</Text>
           </Pressable>
+
+          <Pressable
+            style={styles.item}
+            onPress={() => {
+              setOpen(false);
+              router.push("/tabs/Calendar");
+            }}
+          >
+            <Ionicons name="calendar-outline" size={20} />
+            <Text style={styles.text}>Calendar</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.item}
+            onPress={() => {
+              setOpen(false);
+              router.push("/tabs/Weight");
+            }}
+          >
+            <Ionicons name="scale-outline" size={20} />
+            <Text style={styles.text}>Weight Tracker</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.item}
+            onPress={() => {
+              setOpen(false);
+              router.push("/tabs/Meals");
+            }}
+          >
+            <Ionicons name="fast-food-outline" size={20} />
+            <Text style={styles.text}>Saved Meals</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.item}
+            onPress={() => {
+              setOpen(false);
+              router.push("/tabs/WeeklyInsight");
+            }}
+          >
+            <Ionicons name="analytics" size={20} />
+            <Text style={styles.text}>Weekly Insight</Text>
+          </Pressable>
+
         </View>
       )}
     >
@@ -93,11 +138,56 @@ export default function TabsLayout() {
           ),
         }}
       >
+
         <Tabs.Screen
           name="profile"
           options={{
             href: null,
             title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
+
+          <Tabs.Screen
+          name="WeeklyInsight"
+          options={{
+            href: null,
+            title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
+
+         <Tabs.Screen
+          name="Meals"
+          options={{
+            href: null,
+            title: "Profile",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="Weight"
+          options={{
+            href: null,
+            title: "Weight",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="Calendar"
+          options={{
+            href: null,
+            title: "Calendar",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="person-outline" size={size} color={color} />
             ),

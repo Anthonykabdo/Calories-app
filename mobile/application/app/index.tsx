@@ -13,6 +13,8 @@ import { useRouter } from "expo-router";
 import ImageCapture from "./components/ImageCapture";
 import useUserStore from "./store/useUserStore";
 
+  const API_URL = "http://192.168.0.116:3000";
+
 export default function DailyCaloricIntake() {
   const router = useRouter();
 
@@ -29,7 +31,7 @@ export default function DailyCaloricIntake() {
 
   const suggestRecipes = async () => {
     try {
-      const response = await fetch("http://192.168.0.110:5001/suggest-recipes", {
+      const response = await fetch(`${API_URL}/suggest-recipes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +79,7 @@ export default function DailyCaloricIntake() {
 
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => router.push("./details")}
+            onPress={() => router.push("./tabs/Calories")}
           >
             <Text style={styles.addButtonText}>Add Calories Page</Text>
           </TouchableOpacity>

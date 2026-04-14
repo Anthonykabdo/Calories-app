@@ -19,6 +19,9 @@ interface CalorieItem {
   totalCalories: number;
   itemType?: "food" | "recipe"; 
 }
+
+  const API_URL = "http://192.168.0.116:3000";
+
 export default function DailyCaloricIntakeScreen() {
   const currentUser = useUserStore((state) => state.currentUser);
   const [data, setData] = useState<CalorieItem[]>([]);
@@ -34,7 +37,7 @@ const fetchCalories = async () => {
   setLoading(true);
 
   try {
-    const res = await fetch(`http://192.168.0.110:3000/calories/${userName}`);
+    const res = await fetch(`${API_URL}/calories/${userName}`);
     const result = await res.json();
 
     // No need to normalize recipe/food separately—the backend handles it
@@ -62,7 +65,7 @@ useFocusEffect(
   // Remove item
   const deleteItem = async (id: number) => {
     try {
-      await fetch(`http://192.168.0.110:3000/calories/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/calories/${id}`, { method: "DELETE" });
       setData((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.log(err);
@@ -74,7 +77,7 @@ useFocusEffect(
     try {
       await Promise.all(
         data.map((item) =>
-          fetch(`http://192.168.0.110:3000/calories/${item.id}`, { method: "DELETE" })
+          fetch(`${API_URL}/calories/${item.id}`, { method: "DELETE" })
         )
       );
       setData([]);
