@@ -13,8 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import useUserStore from "../store/useUserStore";
 import SearchBar from "../components/Search";
 import AuthRequired from "../components/AuthRequired";
-
-const API_URL = "http://192.168.0.116:3000";
+import { API_URL } from "./index";
 
 interface Meal {
   id: number;

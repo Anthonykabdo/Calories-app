@@ -15,6 +15,7 @@ import useCalorieStore from "../store/useCalorieStore";
 import useUserStore from "../store/useUserStore";
 import SearchBar from "../components/Search";
 import AuthRequired from "../components/AuthRequired";
+import { API_URL } from "./index";
 
 interface Recipe {
   id: number;
@@ -25,7 +26,6 @@ interface Recipe {
   image: string;
 }
 
-const API_URL = "http://192.168.0.116:3000";
 
 // Utility: normalize ingredients into string[]
 const parseIngredients = (ing: string[] | string | null | undefined): string[] => {

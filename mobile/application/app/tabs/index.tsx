@@ -20,7 +20,7 @@ interface CalorieItem {
   itemType?: "food" | "recipe"; 
 }
 
-  const API_URL = "http://192.168.0.116:3000";
+export const API_URL = "http://192.168.0.116:3000";
 
 export default function DailyCaloricIntakeScreen() {
   const currentUser = useUserStore((state) => state.currentUser);

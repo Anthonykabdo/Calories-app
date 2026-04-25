@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 
 import { useState, useEffect } from "react";
 import { Picker } from "@react-native-picker/picker";
 import useUserStore from "../store/useUserStore";
+import { API_URL } from "./index";
 
 export default function Profile() {
   const { currentUser, setUser, logout } = useUserStore();
@@ -20,7 +21,6 @@ export default function Profile() {
   // Edit profile state
   const [isEditing, setIsEditing] = useState(false);
 
-  const API_URL = "http://192.168.0.116:3000";
 
   const activityOptions = [
     { label: "Sedentary", value: 1.2 },

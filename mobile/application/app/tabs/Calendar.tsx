@@ -14,6 +14,7 @@ import { useFocusEffect } from "expo-router";
 import useUserStore from "../store/useUserStore";
 import AuthRequired from "../components/AuthRequired";
 import { Ionicons } from "@expo/vector-icons";
+import { API_URL } from "./index";
 
 interface CalorieItem {
   id: number;
@@ -23,8 +24,6 @@ interface CalorieItem {
   itemType: string;
   image?: string;
 }
-
-  const API_URL = "http://192.168.0.116:3000";
 
 export default function HistoryScreen() {
   const currentUser = useUserStore((state) => state.currentUser);

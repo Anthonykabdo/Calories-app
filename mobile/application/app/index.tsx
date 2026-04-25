@@ -36,7 +36,7 @@ export default function DailyCaloricIntake() {
     try {
       setLoading(true);
 
-      const response = await fetch("http://192.168.1.8:3000/ai/recommend", {
+      const response = await fetch("http://10.58.119.40:3000/ai/recommend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

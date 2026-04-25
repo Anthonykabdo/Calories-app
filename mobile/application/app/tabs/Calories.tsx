@@ -12,6 +12,7 @@ import useCalorieStore from "../store/useCalorieStore";
 import useUserStore from "../store/useUserStore";
 import SearchBar from "../components/Search";
 import AuthRequired from "../components/AuthRequired";
+import { API_URL } from "./index";
 
 interface FoodItem {
   id: number;
@@ -24,8 +25,6 @@ interface FoodCardProps {
   item: FoodItem;
   setShowAuth: (value: boolean) => void;
 }
-  const API_URL = "http://192.168.0.116:3000";
-
 
 const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
   const [servings, setServings] = useState(1);

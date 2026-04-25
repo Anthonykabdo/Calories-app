@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const API_URL = "http://192.168.0.116:3000";
+import { API_URL } from "../tabs/index";
 
 interface User {
   id: number;
