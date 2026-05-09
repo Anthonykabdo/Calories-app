@@ -2,6 +2,8 @@ const express = require("express");
 const { exec } = require("child_process");
 const cors = require("cors");
 const sql = require("mssql");
+require("dotenv").config();
+const { askChatbot } = require("./ai/chatbotService");
 
 const app = express();
 app.use(cors());
@@ -762,9 +764,236 @@ app.post("/ai/recommend", (req, res) => {
     }
   );
 });
+app.post("/ai/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
 
+    if (!message || message.trim() === "") {
+      return res.status(400).json({
+        error: "Message is required"
+      });
+    }
+
+    console.log("AI CHAT ROUTE HIT:", message);
+
+    const reply = await askChatbot(message);
+
+    res.json({
+      reply
+    });
+  } catch (error) {
+    console.error("AI Chat Error:", error.message);
+
+    res.status(500).json({
+      error: "AI chatbot failed",
+      details: error.message
+    });
+  }
+});
 // 🚀 Start server
 
 app.listen(3000, "0.0.0.0", () => {
   console.log("Server running on port 3000");
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

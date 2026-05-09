@@ -4,6 +4,7 @@ import { Pressable, View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Drawer } from "react-native-drawer-layout";
+import FloatingChatbot from "../components/FloatingChatbot";
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -110,6 +111,7 @@ export default function TabsLayout() {
         </View>
       )}
     >
+      <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
           headerStyle: { backgroundColor: "#1e90ff" },
@@ -224,6 +226,8 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
+      <FloatingChatbot />
+      </View>
     </Drawer>
   );
 }
