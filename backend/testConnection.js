@@ -1,56 +1,77 @@
+const fs = require("fs");
+const csv = require("csv-parser");
 const sql = require("mssql");
 
-// Your SQL Server config
+// 🔌 SQL config (same as your server.js)
 const sqlConfig = {
-  user: "calorie_user",           // your SQL login
-  password: "1234",               // your password
-  server: "DESKTOP-O4KUVHJ",     // MACHINE NAME only
-  database: "calorie_app",    
-    port: 1433,                 // explicit TCP port
-    // database name
+  user: "calorie_user",
+  password: "1234",
+  server: "DESKTOP-O4KUVHJ",
+  database: "calorie_app",
   options: {
     encrypt: false,
     trustServerCertificate: true,
   },
 };
 
-async function testConnection() {
+async function importFoods() {
   try {
     await sql.connect(sqlConfig);
-    console.log("✅ Connection successful!");
+    console.log("✅ Connected to SQL Server");
+
+    const foods = [];
+
+    fs.createReadStream("calories.csv")
+      .pipe(csv())
+      .on("data", (row) => {
+        try {
+          const name = row.FoodItem;
+
+          // Clean "62 cal" → 62
+          const calories = parseInt(
+            row.Cals_per100grams.replace(" cal", "").trim()
+          );
+
+          foods.push({
+            name,
+            calories,
+          });
+        } catch (err) {
+          console.log("⚠️ Skipping row:", row);
+        }
+      })
+      .on("end", async () => {
+        console.log(`📦 Parsed ${foods.length} foods`);
+
+        for (const food of foods) {
+          try {
+            // Prevent duplicates
+            const check = await sql.query`
+              SELECT id FROM Foods WHERE name = ${food.name}
+            `;
+
+            if (check.recordset.length > 0) {
+              console.log(`⏭️ Skipped (exists): ${food.name}`);
+              continue;
+            }
+
+            await sql.query`
+              INSERT INTO Foods (name, caloriesPerServing, image)
+              VALUES (${food.name}, ${food.calories}, NULL)
+            `;
+
+            console.log(`✅ Inserted: ${food.name}`);
+          } catch (err) {
+            console.error(`❌ Error inserting ${food.name}:`, err.message);
+          }
+        }
+
+        console.log("🎉 Import completed");
+        sql.close();
+      });
   } catch (err) {
-    console.error("❌ Connection failed:", err);
-  } finally {
-    sql.close();
+    console.error("❌ DB Connection Error:", err);
   }
 }
-/* =========================
-   Daily Calories (optional)
-========================= */
 
-app.post("/calories", async (req, res) => {
-    console.log("POST /calories hit"); // ✅ this confirms the route is being called
-
-  const { userName, foodId, servings, totalCalories } = req.body;
-
-  try {
-    await sql.query`
-      INSERT INTO CalorieLogs (userName, foodId, servings, totalCalories)
-      VALUES (${userName}, ${foodId}, ${servings}, ${totalCalories})
-    `;
-
-    res.send("Saved");
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-app.get("/asd", async (req, res) => {
-  try {
-    const result = await sql.query("SELECT * FROM CalorieLogs");
-    res.json(result.recordset);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-testConnection();
+importFoods();

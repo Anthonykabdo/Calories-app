@@ -125,7 +125,7 @@ export default function WeeklyInsightsScreen() {
         />
       }
     >
-      <Text style={styles.title}>📊 Weekly Insights</Text>
+      <Text style={styles.title}>Weekly Insights</Text>
 
       {/* 🔥 STREAK */}
       <View style={styles.streakBox}>

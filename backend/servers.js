@@ -1,4 +1,5 @@
 const express = require("express");
+const { exec } = require("child_process");
 const cors = require("cors");
 const sql = require("mssql");
 
@@ -237,15 +238,14 @@ app.get("/recipes", async (req, res) => {
   try {
     const result = await sql.query("SELECT * FROM recipes");
 
-    // Convert ingredients JSON string to array
     const recipes = result.recordset.map(r => ({
       ...r,
-      ingredients: JSON.parse(r.ingredients)
+      ingredients: r.ingredients // 👈 raw string from DB
     }));
 
     res.json(recipes);
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -494,6 +494,7 @@ app.get("/meals/search", async (req, res) => {
       result = await sql.query`
         SELECT 
           m.id, 
+          m.recipe_id,
           m.date, 
           r.name, 
           r.total_calories, 
@@ -508,6 +509,7 @@ app.get("/meals/search", async (req, res) => {
       result = await sql.query`
         SELECT 
           m.id, 
+          m.recipe_id,
           m.date, 
           r.name, 
           r.total_calories, 
@@ -708,6 +710,59 @@ app.get("/weekly-insights", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.post("/ai/recommend", (req, res) => {
+  console.log("AI ROUTE HIT");
+
+  const { ingredients, targetCalories } = req.body;
+
+  if (!ingredients || !Array.isArray(ingredients)) {
+    return res.status(400).json({
+      error: "ingredients must be an array"
+    });
+  }
+
+  if (!targetCalories || isNaN(Number(targetCalories))) {
+    return res.status(400).json({
+      error: "targetCalories must be a valid number"
+    });
+  }
+
+  const ingredientsArg = ingredients.join(", ");
+  const caloriesArg = Number(targetCalories);
+
+    const command = `python ml_api.py "${ingredientsArg}" ${caloriesArg}`;
+
+  exec(
+    command,
+    { cwd: __dirname },
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error("Python error:", error);
+        console.error("stderr:", stderr);
+
+        return res.status(500).json({
+          error: "AI failed",
+          details: stderr || error.message
+        });
+      }
+
+      try {
+        const result = JSON.parse(stdout);
+        return res.json(result);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        console.error("Raw stdout:", stdout);
+
+        return res.status(500).json({
+          error: "Invalid JSON from Python",
+          rawOutput: stdout
+        });
+      }
+    }
+  );
+});
+
 // 🚀 Start server
 
 app.listen(3000, "0.0.0.0", () => {

@@ -157,10 +157,10 @@ export default function ProgressScreen() {
   if (currentUser?.max_calories == null)
     message = "Please Login For accurate Tracking";
   else if (remainingCalories < 0)
-    message = "⚠️ You exceeded your calories today";
+    message = "You exceeded your calories today";
   else if (remainingCalories < 200)
-    message = "⚠️ Careful, almost at limit";
-  else message = "✅ You’re doing great today";
+    message = "Careful, almost at limit";
+  else message = " You’re doing great today";
 
   return (
     <View style={{ flex: 1 }}>

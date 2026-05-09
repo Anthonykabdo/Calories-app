@@ -20,7 +20,7 @@ interface CalorieItem {
   itemType?: "food" | "recipe"; 
 }
 
-export const API_URL = "http://192.168.0.116:3000";
+export const API_URL = "http://10.72.156.40:3000";
 
 export default function DailyCaloricIntakeScreen() {
   const currentUser = useUserStore((state) => state.currentUser);
@@ -130,24 +130,30 @@ useFocusEffect(
   data={data}
   keyExtractor={(item) => item.id.toString()}
   contentContainerStyle={{ paddingVertical: 16 }}
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <View>
-        <Text style={styles.name}>
-          {item.name} {item.itemType === "recipe" ? "(Recipe)" : ""}
-        </Text>
-        <Text style={styles.details}>
-          {item.servings} servings • {item.totalCalories} kcal
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={() => deleteItem(item.id)}
-      >
-        <Text style={styles.deleteText}>Remove</Text>
-      </TouchableOpacity>
+renderItem={({ item }) => (
+  <View style={styles.card}>
+
+    {/* LEFT SIDE (flex shrink fix) */}
+    <View style={styles.textContainer}>
+      <Text style={styles.name}>
+        {item.name} {item.itemType === "recipe" ? "(Recipe)" : ""}
+      </Text>
+
+      <Text style={styles.details}>
+        {item.servings} servings • {item.totalCalories} kcal
+      </Text>
     </View>
-  )}
+
+    {/* RIGHT SIDE (fixed button) */}
+    <TouchableOpacity
+      style={styles.deleteBtn}
+      onPress={() => deleteItem(item.id)}
+    >
+      <Text style={styles.deleteText}>Remove</Text>
+    </TouchableOpacity>
+
+  </View>
+)}
 />
       </ScrollView>
     </View>
@@ -208,4 +214,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  textContainer: {
+  flex: 1,        // 👈 allows text to take space but not overflow
+  paddingRight: 10,
+},
 });

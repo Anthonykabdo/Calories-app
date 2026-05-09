@@ -17,6 +17,7 @@ import { API_URL } from "./index";
 
 interface Meal {
   id: number;
+  recipe_id: number;
   name: string;
   total_calories: number;
   image: string;
@@ -100,7 +101,7 @@ const deleteMeal = async (id: number) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userName: currentUser.name,
-          itemId: meal.id,
+          itemId: meal.recipe_id,
           itemType: "recipe",
           servings: 1,
           totalCalories: meal.total_calories,
@@ -116,35 +117,35 @@ const deleteMeal = async (id: number) => {
   };
 
   // 🧠 RENDER ITEM
-  const renderItem = ({ item }: { item: Meal }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+ const renderItem = ({ item }: { item: Meal }) => (
+  <View style={styles.card}>
+    
+    <View style={{ flex: 1 }}>
+      <Text style={styles.name}>{item.name}</Text>
+      <Text style={styles.calories}>{item.total_calories} kcal</Text>
+      <Text style={styles.date}>
+        {new Date(item.date).toDateString()}
+      </Text>
 
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.calories}>{item.total_calories} kcal</Text>
-        <Text style={styles.date}>
-          {new Date(item.date).toDateString()}
-        </Text>
+      <View style={styles.buttons}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#4CAF50" }]}
+          onPress={() => addCalories(item)}
+        >
+          <Text style={styles.buttonText}>Add Calories</Text>
+        </TouchableOpacity>
 
-        <View style={styles.buttons}>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#4CAF50" }]}
-            onPress={() => addCalories(item)}
-          >
-            <Text style={styles.buttonText}>Add Calories</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#E53935" }]}
-            onPress={() => {deleteMeal(item.id);}}
-          >
-            <Text style={styles.buttonText}>Remove</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#E53935" }]}
+          onPress={() => deleteMeal(item.id)}
+        >
+          <Text style={styles.buttonText}>Remove</Text>
+        </TouchableOpacity>
       </View>
     </View>
-  );
+
+  </View>
+);
 
   if (loading) {
     return (
@@ -198,12 +199,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 12,
     elevation: 3,
-  },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 12,
   },
   name: {
     fontSize: 16,

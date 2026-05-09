@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import ImageCapture from "./components/ImageCapture";
 import useUserStore from "./store/useUserStore";
 
-  const API_URL = "http://192.168.0.116:3000";
+  const API_URL = "http://192.168.0.110:3000";
 
 export default function DailyCaloricIntake() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export default function DailyCaloricIntake() {
     try {
       setLoading(true);
 
-      const response = await fetch("http://10.58.119.40:3000/ai/recommend", {
+      const response = await fetch("http://192.168.10.73:3000/ai/recommend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,47 +65,6 @@ export default function DailyCaloricIntake() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.progressBarBackground}>
-        <View
-          style={[
-            styles.progressBarFill,
-            {
-              width: `${progress * 100}%`,
-              backgroundColor: isOverLimit ? "#ff4d4d" : "#76c7c0",
-            },
-          ]}
-        />
-      </View>
-
-      <Text style={styles.caloriesText}>
-        {totalCalories} / {dailyGoal} kcal
-      </Text>
-
-      <Button title="Reset" onPress={resetCalories} />
-
-      <View style={styles.card}>
-        <Text>Want to Calculate your calories manually?</Text>
-
-        <View style={styles.innerContainer}>
-          <Text style={styles.calories}>Go to the Add calories page</Text>
-
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push("./tabs/Calories")}
-          >
-            <Text style={styles.addButtonText}>Add Calories Page</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text>Want to take a picture of your meal and we handle the rest?</Text>
-
-        <View style={styles.innerContainer}>
-          <Text style={styles.calories}>Take a Picture now</Text>
-          <ImageCapture />
-        </View>
-      </View>
 
       <View style={styles.card}>
         <Text>Tell us your target calories and available ingredients</Text>

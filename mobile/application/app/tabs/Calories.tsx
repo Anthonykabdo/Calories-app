@@ -35,16 +35,14 @@ const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
 
   const handleAdd = async () => {
     if (!currentUser) {
-      setShowAuth(true); // 🔥 show modal
+      setShowAuth(true);
       return;
     }
 
     try {
       await fetch(`${API_URL}/calories`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userName: currentUser.name,
           itemId: item.id,
@@ -60,26 +58,27 @@ const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
     }
   };
 
-  const increment = () => setServings((prev) => prev + 1);
-  const decrement = () => setServings((prev) =>
-    prev > 1 ? prev - 1 : 1
-  );
-
   return (
     <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <Text style={styles.name}>{item.name}</Text>
 
-      <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.badge}>
+          {item.caloriesPerServing} kcal
+        </Text>
+      </View>
 
-      <Text style={styles.calories}>
-        {item.caloriesPerServing} kcal per serving
-      </Text>
-
+      {/* Servings */}
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Servings:</Text>
 
         <View style={styles.servingsControl}>
-          <TouchableOpacity style={styles.controlButton} onPress={decrement}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={() => setServings((p) => Math.max(1, p - 1))}
+          >
             <Text style={styles.controlButtonText}>-</Text>
           </TouchableOpacity>
 
@@ -93,12 +92,16 @@ const FoodCard = ({ item, setShowAuth }: FoodCardProps) => {
             }}
           />
 
-          <TouchableOpacity style={styles.controlButton} onPress={increment}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={() => setServings((p) => p + 1)}
+          >
             <Text style={styles.controlButtonText}>+</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Footer */}
       <View style={styles.totalRow}>
         <Text style={styles.total}>Total: {totalCalories} kcal</Text>
 
@@ -149,7 +152,7 @@ export default function FoodDetailsScreen() {
       {/* Search Bar */}
       <View style={styles.container}>
       <SearchBar<FoodItem >
-        apiEndpoint="http://192.168.0.116:3000/search?table=Foods"
+        apiEndpoint={`${API_URL}/search?table=Foods`}
         onFilter={setFilteredData} // <-- fix typo: was setFilteredFoods
       />
       </View>
@@ -189,11 +192,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
   },
-  name: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
+
   calories: {
     fontSize: 16,
     color: "#666",
@@ -252,4 +251,27 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+  headerRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 8,
+},
+
+name: {
+  fontSize: 18,
+  fontWeight: "600",
+  flex: 1,
+  paddingRight: 10,
+},
+
+badge: {
+  backgroundColor: "#e3f2fd",
+  color: "#1565c0",
+  paddingHorizontal: 10,
+  paddingVertical: 4,
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: "600",
+},
 });

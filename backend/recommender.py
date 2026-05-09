@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-DATA_PATH = "`recipes_da`taset.csv"
+DATA_PATH = "recipes_dataset.csv"
 
 def recommend_recipes(user_ingredients: str, target_calories: int, top_n: int = 10):
     df = pd.read_csv(DATA_PATH)
