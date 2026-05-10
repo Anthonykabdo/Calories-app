@@ -113,12 +113,12 @@ app.get("/foods/search", async (req, res) => {
    ADD FOOD (optional)
 ========================= */
 app.post("/foods", async (req, res) => {
-  const { name, caloriesPerServing, image } = req.body;
+  const { name, caloriesPerServing } = req.body;
 
   try {
     await sql.query`
-      INSERT INTO Foods (name, caloriesPerServing, image)
-      VALUES (${name}, ${caloriesPerServing}, ${image})
+      INSERT INTO Foods (name, caloriesPerServing)
+      VALUES (${name}, ${caloriesPerServing})
     `;
     res.send("Food added");
   } catch (err) {
@@ -163,8 +163,8 @@ app.get("/calories/:userName", async (req, res) => {
   try {
     const result = await sql.query`
       SELECT c.*, 
-             f.name AS foodName, f.caloriesPerServing AS foodCalories, f.image AS foodImage,
-             r.name AS recipeName, r.total_calories AS recipeCalories, r.image AS recipeImage
+             f.name AS foodName, f.caloriesPerServing AS foodCalories,
+             r.name AS recipeName, r.total_calories AS recipeCalories
       FROM CalorieLogs c
       LEFT JOIN Foods f ON c.itemType = 'food' AND c.itemId = f.id
       LEFT JOIN Recipes r ON c.itemType = 'recipe' AND c.itemId = r.id
@@ -180,8 +180,7 @@ app.get("/calories/:userName", async (req, res) => {
         ? row.foodCalories * row.servings
         : row.recipeCalories,
       servings: row.servings,
-      itemType: row.itemType,
-      image: row.itemType === 'food' ? row.foodImage : row.recipeImage
+      itemType: row.itemType
     }));
 
     res.json(data);
@@ -439,8 +438,7 @@ app.get("/meals/user/:id", async (req, res) => {
         m.recipe_id, 
         m.date, 
         r.name, 
-        r.total_calories, 
-        r.image
+        r.total_calories
       FROM meals m
       JOIN recipes r ON m.recipe_id = r.id
       WHERE m.user_id = ${userId}
@@ -499,8 +497,7 @@ app.get("/meals/search", async (req, res) => {
           m.recipe_id,
           m.date, 
           r.name, 
-          r.total_calories, 
-          r.image
+          r.total_calories
         FROM meals m
         JOIN recipes r ON m.recipe_id = r.id
         WHERE m.user_id = ${user_id}
@@ -514,8 +511,7 @@ app.get("/meals/search", async (req, res) => {
           m.recipe_id,
           m.date, 
           r.name, 
-          r.total_calories, 
-          r.image
+          r.total_calories
         FROM meals m
         JOIN recipes r ON m.recipe_id = r.id
         WHERE m.user_id = ${user_id}
